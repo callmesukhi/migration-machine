@@ -38,11 +38,18 @@ MIGRATE="$MIGRATE_ROOT/migrate"
 # shellcheck disable=SC1091
 . "$LIB_DIR/core.sh"
 
-DIALOG_BIN="${DIALOG_BIN:-/usr/local/bin/dialog}"
-DIALOG_OUT="${DIALOG_OUT:-/tmp/mm-wizard-dialog.json}"
-WIZARD_NAME="local-wizard"
-WIZARD_FILE="$MIGRATE_ROOT/manifests/$WIZARD_NAME.json"
 DIALOG_ICON="SF=desktopcomputer.and.arrow.down"
+
+# swiftDialog's binary lands at /usr/local/bin/dialog on every Mac (its notarized
+# pkg hardcodes that path). Probe the Apple-silicon Homebrew prefix too in case a
+# future install relocates it, and honor an explicit DIALOG_BIN if one is set.
+resolve_dialog() {
+  local c
+  for c in "${DIALOG_BIN:-}" /usr/local/bin/dialog /opt/homebrew/bin/dialog; do
+    if [ -n "$c" ] && [ -x "$c" ]; then DIALOG_BIN="$c"; export DIALOG_BIN; return 0; fi
+  done
+  return 1
+}
 
 # ----------------------------------------------------------------------------
 # Manifest builder.
@@ -96,18 +103,16 @@ with open(out, "w") as f:
     f.write("\n")
 PY
   elif has_cmd osascript; then
-    MM_PKG_MGR="${MM_PKG_MGR:-brew}" \
-    MM_DOTFILES_REPO="${MM_DOTFILES_REPO:-}" \
-    MM_STEPS="${MM_STEPS:-}" \
+    # Pass inputs as argv, not env: JXA can only reach process env through the
+    # ObjC bridge (needs Foundation imported and is fragile). app.read/app.write/
+    # Path/JSON are the same APIs core.sh already relies on, no import needed.
     /usr/bin/osascript -l JavaScript -e '
       function run(argv){
         var app = Application.currentApplication(); app.includeStandardAdditions = true;
         var base = argv[0], out = argv[1];
-        var env = $.NSProcessInfo.processInfo.environment;
-        function getenv(k){ var v = env.objectForKey(k); return v ? ObjC.unwrap(v).replace(/^\s+|\s+$/g,"") : ""; }
-        var pkg = getenv("MM_PKG_MGR") || "brew";
-        var repo = getenv("MM_DOTFILES_REPO");
-        var keep = {}; getenv("MM_STEPS").split(",").forEach(function(x){ if(x) keep[x] = true; });
+        var pkg = (argv[2] || "brew");
+        var repo = (argv[3] || "").replace(/^\s+|\s+$/g, "");
+        var keep = {}; (argv[4] || "").split(",").forEach(function(x){ if(x) keep[x] = true; });
         var d = JSON.parse(app.read(Path(base)));
         var cfg = d.config || {};
         cfg.packageManager = pkg;
@@ -126,7 +131,7 @@ PY
         d.description = "Created by `migrate wizard`. Safe to edit or delete.";
         app.write(JSON.stringify(d, null, 2) + "\n", { to: Path(out), overwriting: true });
         return "ok";
-      }' "$base" "$out"
+      }' "$base" "$out" "${MM_PKG_MGR:-brew}" "${MM_DOTFILES_REPO:-}" "${MM_STEPS:-}"
   else
     echo "No JSON engine available (need python3 or osascript)." >&2
     return 1
@@ -145,15 +150,27 @@ base_for_pkg() {
 # Hidden non-GUI entry: build the manifest from MM_* env and exit.
 # ----------------------------------------------------------------------------
 if [ "${1:-}" = "--build-only" ]; then
-  build_manifest "$(base_for_pkg "${MM_PKG_MGR:-brew}")" "$WIZARD_FILE" \
-    && echo "Built $WIZARD_FILE"
+  data="${MIGRATION_DATA:-$HOME/migration-data}"
+  mkdir -p "$data" || exit 1
+  out="$data/local-wizard.json"
+  build_manifest "$(base_for_pkg "${MM_PKG_MGR:-brew}")" "$out" && echo "Built $out"
   exit $?
 fi
 
 # ----------------------------------------------------------------------------
 # swiftDialog plumbing.
 # ----------------------------------------------------------------------------
-have_dialog() { [ -x "$DIALOG_BIN" ]; }
+# Per-run temp file for the dialog's JSON output, created under a private umask
+# so it is not world-readable and cannot be pre-created by another user.
+if [ -z "${DIALOG_OUT:-}" ]; then
+  _old_umask="$(umask)"; umask 077
+  DIALOG_OUT="$(mktemp "${TMPDIR:-/tmp}/mm-wizard-dialog.XXXXXX")" \
+    || { umask "$_old_umask"; echo "Could not create a temp file for the dialog." >&2; exit 1; }
+  umask "$_old_umask"
+  trap 'rm -f "$DIALOG_OUT"' EXIT
+fi
+
+have_dialog() { resolve_dialog; }
 
 ensure_dialog() {
   have_dialog && return 0
@@ -165,14 +182,19 @@ ensure_dialog() {
   fi
   if has_cmd curl; then
     echo "Downloading swiftDialog (notarized) from its latest release..."
-    local url tmp="/tmp/swiftDialog.pkg"
+    local url tmpd
+    # Restrict to the swiftDialog releases host, not any .pkg URL in the payload.
     url=$( curl -fsSL https://api.github.com/repos/swiftDialog/swiftDialog/releases/latest \
-           | grep -o 'https://[^"]*\.pkg' | head -1 )
-    if [ -n "$url" ] && curl -fsSL -o "$tmp" "$url"; then
+           | grep -o 'https://github.com/swiftDialog/swiftDialog/releases/download/[^"]*\.pkg' \
+           | head -1 )
+    tmpd="$(mktemp -d "${TMPDIR:-/tmp}/swiftDialog.XXXXXX")" || return 1
+    if [ -n "$url" ] && curl -fsSL -o "$tmpd/swiftDialog.pkg" "$url"; then
       echo "Installing swiftDialog (you may be asked for your password)..."
-      sudo /usr/sbin/installer -pkg "$tmp" -target / >/dev/null 2>&1
-      have_dialog && return 0
+      # The pkg is Apple-notarized, so installer verifies it before running.
+      sudo /usr/sbin/installer -pkg "$tmpd/swiftDialog.pkg" -target / >/dev/null 2>&1
     fi
+    rm -rf "$tmpd"
+    have_dialog && return 0
   fi
   cat <<'EOF'
 
@@ -311,6 +333,7 @@ export MIGRATE_UI=gui
 
 if [ "$ROLE" = "capture" ]; then
   if ! screen_confirm_capture "$DATA_DIR"; then echo "Cancelled."; exit 0; fi
+  rm -f "$DIALOG_OUT"
   exec "$MIGRATE" --data "$DATA_DIR" capture
 fi
 
@@ -333,17 +356,22 @@ is_true "$(json_get "App preferences and config")" && add_step "restore-config"
 is_true "$(json_get "TouchID for sudo")"          && add_step "touchid-sudo"
 export MM_PKG_MGR MM_DOTFILES_REPO MM_STEPS
 
+# Write the generated manifest into the user-writable data dir (the install dir
+# can be read-only, e.g. a Homebrew Cellar) and pass it to the engine by path.
+WIZARD_FILE="$DATA_DIR/local-wizard.json"
+mkdir -p "$DATA_DIR" || { echo "Cannot write to data folder: $DATA_DIR" >&2; exit 1; }
 if ! build_manifest "$(base_for_pkg "$MM_PKG_MGR")" "$WIZARD_FILE"; then
   echo "Could not generate the manifest." >&2
   exit 1
 fi
 
 # Preview (dry run) through the engine, then confirm the real run.
-"$MIGRATE" --data "$DATA_DIR" provision -m "$WIZARD_NAME" --dry-run
+"$MIGRATE" --data "$DATA_DIR" provision -m "$WIZARD_FILE" --dry-run
 
 if ! screen_confirm_apply; then
   echo "Stopped. Your data folder and the generated manifest are saved."
   exit 0
 fi
 
-exec "$MIGRATE" --data "$DATA_DIR" bootstrap -m "$WIZARD_NAME"
+rm -f "$DIALOG_OUT"
+exec "$MIGRATE" --data "$DATA_DIR" bootstrap -m "$WIZARD_FILE"

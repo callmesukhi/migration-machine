@@ -1,9 +1,13 @@
 class MigrationMachine < Formula
   desc "Move your Mac setup to a new machine without Migration Assistant"
   homepage "https://migration-machine.callmesukhi.com"
-  url "https://github.com/callmesukhi/migration-machine/archive/refs/tags/v0.1.0.tar.gz"
-  sha256 "REPLACE_WITH_RELEASE_TARBALL_SHA256"
   license "MIT"
+
+  # HEAD-only until the first tagged release. Install with:
+  #   brew install --HEAD callmesukhi/tap/migration-machine
+  # At release time, add a stable block (and drop this comment):
+  #   url "https://github.com/callmesukhi/migration-machine/archive/refs/tags/v0.1.0.tar.gz"
+  #   sha256 "<output of: shasum -a 256 on that tarball>"
   head "https://github.com/callmesukhi/migration-machine.git", branch: "main"
 
   # No build step: this is plain bash. We stage the tool under libexec and put a

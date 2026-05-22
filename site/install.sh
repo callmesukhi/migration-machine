@@ -33,14 +33,16 @@ command -v curl >/dev/null 2>&1 || die "curl is required but not found."
 command -v tar  >/dev/null 2>&1 || die "tar is required but not found."
 
 say "Downloading migration-machine ($REF) into $DEST"
-tmp="$(mktemp -d)"
+# BSD/macOS mktemp needs an explicit template (it is not GNU mktemp), so always
+# pass one. This form works on both macOS and Linux.
+tmp="$(mktemp -d "${TMPDIR:-/tmp}/migration-machine.XXXXXX")" || die "could not create a temporary directory."
 trap 'rm -rf "$tmp"' EXIT
 curl -fsSL "$TARBALL" -o "$tmp/mm.tar.gz" || die "download failed: $TARBALL"
 
 mkdir -p "$DEST"
 # The archive nests everything under <repo>-<ref>/; strip that one level.
 tar -xzf "$tmp/mm.tar.gz" -C "$DEST" --strip-components=1 || die "extract failed."
-[ -f "$DEST/migrate" ] || die "install looks incomplete (no migrate at $DEST)."
+[ -f "$DEST/migrate" ] || die "install looks incomplete (no migrate at $DEST/migrate)."
 
 say "Installed to $DEST"
 
