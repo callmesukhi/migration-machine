@@ -8,27 +8,31 @@ on:
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
-# Production deploy pushes the built site to the gh-pages branch.
-# (Set Pages source to "Deploy from a branch" -> gh-pages -> / root.)
+# Allow the workflow to publish to GitHub Pages.
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
+# One deployment at a time; let an in-flight run finish.
 concurrency:
-  group: pages-deploy
+  group: pages
   cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy site/ to gh-pages
-        uses: JamesIves/github-pages-deploy-action@v4
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload site/
+        uses: actions/upload-pages-artifact@v3
         with:
-          folder: site
-          branch: gh-pages
-          # Wipe stale production files, but never the in-flight PR previews
-          # that pr-preview-action keeps under pr-preview/.
-          clean: true
-          clean-exclude: |
-            pr-preview/
+          path: site
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
