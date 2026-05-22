@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" width="1200" height="360" role="img" aria-label="migration-machine — move your whole Mac setup without Migration Assistant">
+  <rect width="1200" height="360" rx="24" fill="#0a0d12"/>
+  <rect x="10" y="10" width="1180" height="340" rx="16" fill="none" stroke="#1e2733" stroke-width="2"/>
+  <circle cx="54" cy="54" r="9" fill="#ff5f57"/>
+  <circle cx="84" cy="54" r="9" fill="#febc2e"/>
+  <circle cx="114" cy="54" r="9" fill="#28c840"/>
+  <text x="150" y="61" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="22" fill="#5b6675">~/migration-machine</text>
+  <line x1="24" y1="90" x2="1176" y2="90" stroke="#161b22" stroke-width="2"/>
+  <text x="60" y="198" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="64" font-weight="500"><tspan fill="#3fd17c">&gt;_</tspan><tspan fill="#e6edf3"> migration-machine</tspan></text>
+  <text x="62" y="258" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="27" fill="#9aa7b4">Move your whole Mac setup <tspan fill="#3fd17c">without Migration Assistant.</tspan></text>
+  <text x="62" y="308" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="21" fill="#56708a">pure bash&#160;&#160;·&#160;&#160;AES-256 secrets&#160;&#160;·&#160;&#160;Homebrew + MacPorts&#160;&#160;·&#160;&#160;MIT</text>
+</svg>

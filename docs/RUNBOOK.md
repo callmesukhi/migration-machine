@@ -8,7 +8,7 @@ The end-to-end procedure, plus the parts no script can do for you. Read the manu
 2. Clone the repo and capture:
 
    ```bash
-   git clone https://github.com/YOUR_GITHUB_USERNAME/migration-machine.git
+   git clone https://github.com/callmesukhi/migration-machine.git
    cd migration-machine
    ./migrate --data ~/Sync/migration capture
    ```
@@ -22,7 +22,7 @@ The end-to-end procedure, plus the parts no script can do for you. Read the manu
 1. Clone the repo, pick and edit a manifest:
 
    ```bash
-   git clone https://github.com/YOUR_GITHUB_USERNAME/migration-machine.git
+   git clone https://github.com/callmesukhi/migration-machine.git
    cd migration-machine
    cp manifests/example-homebrew.json manifests/local-mymac.json
    $EDITOR manifests/local-mymac.json     # set dotfilesRepo, etc.
