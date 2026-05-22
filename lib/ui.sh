@@ -110,7 +110,6 @@ _ui_gui_init() {
     --button1text "Please wait" --button1disabled \
     --moveable --ontop \
     "${listargs[@]}" >/dev/null 2>&1 &
-  UI_DIALOG_PID=$!
   sleep 1
 }
 

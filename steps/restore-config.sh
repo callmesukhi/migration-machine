@@ -11,10 +11,9 @@ if [ ! -x "$MIGRATE_ROOT/migrate" ]; then
 fi
 
 phases="editors apps fonts browser"
-rc=0
 for phase in $phases; do
   echo "--- restoring: $phase ---"
-  "$MIGRATE_ROOT/migrate" restore --yes --only "$phase" || { echo "WARN: phase '$phase' reported issues."; rc=1; }
+  "$MIGRATE_ROOT/migrate" restore --yes --only "$phase" || echo "WARN: phase '$phase' reported issues."
 done
 
 # Non-fatal: optional config that your repo may not cover. Warnings are fine.

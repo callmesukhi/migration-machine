@@ -95,7 +95,9 @@ info "Using manifest: $MANIFEST_FILE"
 # ----------------------------------------------------------------------------
 while IFS= read -r line; do
   [ -z "$line" ] && continue
-  export "$line"
+  key="${line%%=*}"
+  value="${line#*=}"
+  export "$key=$value"
 done < <( emit_config "$MANIFEST_FILE" )
 
 # ----------------------------------------------------------------------------

@@ -365,7 +365,7 @@ capture_secrets() {
   stage_path() {
     local src="$1"
     [ -e "$src" ] || return 0
-    local rel="${src#$HOME/}"
+    local rel="${src#"$HOME"/}"
     local dest="$stage/$rel"
     mkdir -p "$(dirname "$dest")"
     cp -pR "$src" "$dest" 2>/dev/null && log "  staged ~/${rel}"
