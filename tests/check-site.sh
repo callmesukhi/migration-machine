@@ -41,13 +41,13 @@ if not html_files:
     problems.append("no HTML files found in site/")
 
 for name in html_files:
-    with open(os.path.join(site, name), encoding="utf-8") as f:
-        text = f.read()
     c = Collector()
     try:
+        with open(os.path.join(site, name), encoding="utf-8") as f:
+            text = f.read()
         c.feed(text)
     except Exception as e:
-        problems.append("%s: HTML parse error: %s" % (name, e))
+        problems.append("%s: HTML read/parse error: %s" % (name, e))
         continue
     for ref in c.refs:
         u = urlparse(ref)
