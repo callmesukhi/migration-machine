@@ -11,6 +11,11 @@ All notable changes to this project are documented here. The format is based on
   skip/confirm, dry-run, `--only`, and optional vs. required failure.
 - GitHub Actions CI: engine tests (gating) and shellcheck (advisory).
 - README "Status & testing" section with a "Tested on" table.
+- Project website under `site/`, deployed to GitHub Pages at
+  migration-machine.callmesukhi.com via the `pages` workflow.
+- `site` workflow and `tests/check-site.sh`: validate that each page parses and
+  that all `href`/`src` links and assets resolve, on PRs touching `site/`.
+- README banner and CI/site/pages status badges.
 
 ## [0.1.0] - 2026-05-22
 

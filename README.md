@@ -1,3 +1,14 @@
+<p align="center">
+  <img src=".github/banner.png" alt="migration-machine — move your whole Mac setup without Migration Assistant" width="820">
+</p>
+
+<p align="center">
+  <a href="https://github.com/callmesukhi/migration-machine/actions/workflows/ci.yml"><img src="https://github.com/callmesukhi/migration-machine/actions/workflows/ci.yml/badge.svg" alt="ci status"></a>
+  <a href="https://github.com/callmesukhi/migration-machine/actions/workflows/site.yml"><img src="https://github.com/callmesukhi/migration-machine/actions/workflows/site.yml/badge.svg" alt="site validation status"></a>
+  <a href="https://github.com/callmesukhi/migration-machine/actions/workflows/pages.yml"><img src="https://github.com/callmesukhi/migration-machine/actions/workflows/pages.yml/badge.svg" alt="pages deploy status"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-3fd17c" alt="license: MIT"></a>
+</p>
+
 # migration-machine
 
 Move your whole Mac setup to a new machine without Migration Assistant or Time Machine. Capture your config on the old Mac, carry one folder across, and provision the new Mac from a manifest you control.
@@ -47,7 +58,7 @@ $MIGRATION_DATA/          your data (NOT in the repo)
 On the OLD Mac:
 
 ```bash
-git clone https://github.com/YOUR_GITHUB_USERNAME/migration-machine.git
+git clone https://github.com/callmesukhi/migration-machine.git
 cd migration-machine
 ./migrate --data ~/Sync/migration capture
 ```
@@ -57,7 +68,7 @@ Carry `~/Sync/migration` to the new Mac (cloud sync, drive, etc.).
 On the NEW Mac:
 
 ```bash
-git clone https://github.com/YOUR_GITHUB_USERNAME/migration-machine.git
+git clone https://github.com/callmesukhi/migration-machine.git
 cd migration-machine
 cp manifests/example-homebrew.json manifests/local-mymac.json   # then edit it
 ./migrate --data ~/Sync/migration provision -m local-mymac --dry-run   # preview

@@ -32,6 +32,9 @@ shellcheck --severity=warning migrate lib/*.sh steps/*.sh tests/*.sh
 
 # a dry run changes nothing and exercises the engine
 ./migrate --data /tmp/md provision -m example-homebrew --dry-run --ui cli
+
+# if you touched site/, validate its links and assets
+bash tests/check-site.sh
 ```
 
 The engine's control flow (validation skip/confirm, required vs optional, dry-run, `--only`) is the part most worth testing. You can verify it on any Linux or macOS box with fake step scripts.
