@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Docs — migration-machine</title>
+  <meta name="description" content="Install, commands, quick start, and the manual checklist for migration-machine.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="docs">
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html"><span class="caret">&gt;_</span> migration-machine</a>
+      <button class="nav-toggle" aria-label="Menu">≡</button>
+      <div class="nav-links">
+        <a href="index.html" data-page="home">Home</a>
+        <a href="docs.html" data-page="docs">Docs</a>
+        <a href="manifest.html" data-page="manifest">Manifest</a>
+        <a class="nav-gh" href="https://github.com/callmesukhi/migration-machine" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="flush" style="padding-top:40px;">
+    <div class="wrap">
+      <p class="section-h">// docs</p>
+      <h2>Using migration-machine</h2>
+      <p class="section-sub">Run <code>capture</code> on the old Mac, carry the data folder over, then <code>provision</code> on the new one. Always dry-run first.</p>
+
+      <div class="doc">
+        <aside class="toc">
+          <a href="#install">Install</a>
+          <a href="#data">Tool vs data</a>
+          <a href="#commands">Commands</a>
+          <a href="#old">On the old Mac</a>
+          <a href="#new">On the new Mac</a>
+          <a href="#manual">Manual checklist</a>
+          <a href="#trouble">Troubleshooting</a>
+        </aside>
+
+        <div class="prose">
+          <h3 id="install">Install</h3>
+          <p>It's plain bash with no runtime to install. Clone it on each machine.</p>
+          <div class="codewrap">
+            <button class="copy">copy</button>
+            <pre class="block"><code>git clone https://github.com/callmesukhi/migration-machine.git
+cd migration-machine</code></pre>
+          </div>
+
+          <h3 id="data">Tool vs data</h3>
+          <p>The repo is the tool. Your captured config is <span class="muted">data</span>, kept in a separate folder so you can carry it between machines. Point at it with <code>--data DIR</code> or the <code>MIGRATION_DATA</code> environment variable. Default: <code>~/migration-data</code>.</p>
+          <div class="callout"><b>Carry one folder.</b> A cloud-synced directory, a USB drive, anything you trust. The secrets inside it are encrypted, but the passphrase is the only wall, so choose a strong one.</div>
+
+          <h3 id="commands">Commands</h3>
+          <table class="ref">
+            <tr><th>Command</th><th>What it does</th></tr>
+            <tr><td><code>migrate capture</code></td><td>Export this Mac's config into the data folder (run on the OLD Mac).</td></tr>
+            <tr><td><code>migrate provision -m M</code></td><td>Provision a fresh Mac from manifest <code>M</code> (run on the NEW Mac).</td></tr>
+            <tr><td><code>migrate provision --list</code></td><td>List available manifests.</td></tr>
+            <tr><td><code>migrate provision -m M --dry-run</code></td><td>Preview every step. Changes nothing.</td></tr>
+            <tr><td><code>migrate provision -m M --only ID</code></td><td>Run a single step by id.</td></tr>
+            <tr><td><code>migrate restore --only PHASE</code></td><td>Restore captured config only (no provisioning).</td></tr>
+            <tr><td><code>migrate bootstrap -m M</code></td><td>Ensure Xcode CLT, then provision (bare Mac).</td></tr>
+          </table>
+          <p class="muted">A global <code>--data DIR</code> goes before the command. <code>MIGRATE_UI=cli|gui|auto</code> forces the progress UI.</p>
+
+          <h3 id="old">On the old Mac</h3>
+          <p>Grant your terminal Full Disk Access first (System Settings → Privacy &amp; Security), or some files silently skip.</p>
+          <div class="codewrap">
+            <button class="copy">copy</button>
+            <pre class="block"><code>./migrate --data ~/Sync/migration capture</code></pre>
+          </div>
+          <p>Set a strong passphrase for the encrypted secrets bundle when prompted, then let your sync finish.</p>
+
+          <h3 id="new">On the new Mac</h3>
+          <p>Copy an example manifest, point it at your dotfiles repo, dry-run, then go.</p>
+          <div class="codewrap">
+            <button class="copy">copy</button>
+            <pre class="block"><code>cp manifests/example-homebrew.json manifests/local-mymac.json
+$EDITOR manifests/local-mymac.json
+
+./migrate --data ~/Sync/migration provision -m local-mymac --dry-run
+./migrate --data ~/Sync/migration bootstrap  -m local-mymac</code></pre>
+          </div>
+          <div class="callout">Run from a <b>Terminal</b>, not a pure GUI launch. Secrets restore prompts for the passphrase and several steps use <code>sudo</code>; those prompts need a terminal.</div>
+
+          <h3 id="manual">Manual checklist</h3>
+          <p>No script can do these. Budget an hour.</p>
+          <ul class="check">
+            <li>Re-grant app permissions: Full Disk Access, Accessibility, Screen Recording, Input Monitoring. These live in macOS's TCC database and are deliberately not transferable.</li>
+            <li>Sign back into apps (Slack, 1Password, browsers, Spotify). Preferences restore; sessions do not.</li>
+            <li>Re-enter license keys for paid, non-subscription apps.</li>
+            <li>Keychain: turn on iCloud Keychain on both Macs, or export items manually. Most "why is this broken" traces back to a missing Keychain entry.</li>
+            <li>Browser profiles: sign into your browser account to restore extensions and history.</li>
+            <li>Your data (Documents, Photos, Mail, repos) moves separately. This tool is config only.</li>
+            <li>Verify keys: <code>ssh-add -l</code>, a test <code>git fetch</code>, and <code>gpg --list-secret-keys</code>.</li>
+          </ul>
+
+          <h3 id="trouble">Troubleshooting</h3>
+          <p><b>A file is missing from capture.</b> Check the capture log for a <code>WARN</code>. Usual cause is Full Disk Access not granted.</p>
+          <p><b>An app ignored its restored prefs.</b> It was running during import and overwrote them on quit. Quit it, then <code>--only restore-config</code>.</p>
+          <p><b>The MacPorts step stops.</b> MacPorts has no one-line installer; set <code>config.macportsPkgUrl</code> to the <code>.pkg</code> for your macOS version.</p>
+          <p><b>VS Code extensions did not install.</b> Enable the <code>code</code> CLI in VS Code, then re-run the step.</p>
+          <p class="muted">More detail lives in <code>docs/RUNBOOK.md</code> in the repo.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap foot-inner">
+      <div><span class="foot-brand">&gt;_ migration-machine</span> · MIT</div>
+      <div class="foot-links">
+        <a href="index.html">Home</a>
+        <a href="manifest.html">Manifest</a>
+        <a href="https://github.com/callmesukhi/migration-machine" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

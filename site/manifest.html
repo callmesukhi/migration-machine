@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Manifest reference — migration-machine</title>
+  <meta name="description" content="The JSON manifest schema for migration-machine: config keys, step fields, the execution model, and the step script contract.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="manifest">
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html"><span class="caret">&gt;_</span> migration-machine</a>
+      <button class="nav-toggle" aria-label="Menu">≡</button>
+      <div class="nav-links">
+        <a href="index.html" data-page="home">Home</a>
+        <a href="docs.html" data-page="docs">Docs</a>
+        <a href="manifest.html" data-page="manifest">Manifest</a>
+        <a class="nav-gh" href="https://github.com/callmesukhi/migration-machine" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="flush" style="padding-top:40px;">
+    <div class="wrap">
+      <p class="section-h">// manifest</p>
+      <h2>Manifest reference</h2>
+      <p class="section-sub">A manifest is a JSON file in <code>manifests/</code> that tells the engine what to do. Copy an example, rename it <code>local-&lt;name&gt;.json</code> (gitignored), and edit it.</p>
+
+      <div class="doc">
+        <aside class="toc">
+          <a href="#shape">Shape</a>
+          <a href="#config">config</a>
+          <a href="#steps">steps</a>
+          <a href="#model">Execution model</a>
+          <a href="#contract">Step contract</a>
+          <a href="#example">Example</a>
+        </aside>
+
+        <div class="prose">
+          <h3 id="shape">Shape</h3>
+          <div class="codewrap">
+            <button class="copy">copy</button>
+            <pre class="block"><code>{
+  "name": "Human-readable name",
+  "description": "Optional notes.",
+  "config": { ... },
+  "steps": [ ... ]
+}</code></pre>
+          </div>
+
+          <h3 id="config">config</h3>
+          <p>A flat object of string values. Each key is exported to step scripts as <code>CFG_&lt;UPPERCASE_KEY&gt;</code>. Keys used by the shipped steps:</p>
+          <table class="ref">
+            <tr><th>Key</th><th>Used by</th><th>Meaning</th></tr>
+            <tr><td><code>packageManager</code></td><td>package-manager, packages</td><td><code>brew</code> or <code>port</code></td></tr>
+            <tr><td><code>dotfilesRepo</code></td><td>dotfiles</td><td>git URL to clone (SSH for private submodules)</td></tr>
+            <tr><td><code>dotfilesCloneDir</code></td><td>dotfiles</td><td>clone path relative to <code>$HOME</code></td></tr>
+            <tr><td><code>dotfilesInstall</code></td><td>dotfiles</td><td>installer command run inside the repo</td></tr>
+            <tr><td><code>commitMonoUrl</code></td><td>dotfiles</td><td>optional font zip staged before install</td></tr>
+            <tr><td><code>brewfile</code></td><td>packages</td><td>Brewfile path relative to the data dir</td></tr>
+            <tr><td><code>portfile</code></td><td>packages</td><td>port list path relative to the data dir</td></tr>
+            <tr><td><code>macportsPkgUrl</code></td><td>package-manager</td><td><code>.pkg</code> URL for your macOS version</td></tr>
+            <tr><td><code>secretsDmg</code></td><td>secrets</td><td>encrypted bundle path relative to the data dir</td></tr>
+            <tr><td><code>extraDefaults</code></td><td>macos-defaults</td><td>optional extra <code>defaults</code> script path</td></tr>
+          </table>
+          <p class="muted">Add your own keys; they become <code>CFG_*</code> for any custom step you write.</p>
+
+          <h3 id="steps">steps</h3>
+          <p>An ordered array. Each step:</p>
+          <table class="ref">
+            <tr><th>Field</th><th>Req</th><th>Meaning</th></tr>
+            <tr><td><code>id</code></td><td>yes</td><td>stable identifier, used by <code>--only</code></td></tr>
+            <tr><td><code>title</code></td><td>yes</td><td>shown in the progress UI</td></tr>
+            <tr><td><code>subtitle</code></td><td>no</td><td>shown under the title in the GUI</td></tr>
+            <tr><td><code>run</code></td><td>yes</td><td>path to the step script, relative to the repo root</td></tr>
+            <tr><td><code>validation</code></td><td>no</td><td>shell expression run with <code>bash -c</code>. Passes before → step is skipped. Empty → always run.</td></tr>
+            <tr><td><code>required</code></td><td>no</td><td><code>true</code> aborts the run on failure; otherwise warn and continue</td></tr>
+          </table>
+
+          <h3 id="model">Execution model</h3>
+          <p>For each step the engine:</p>
+          <ol>
+            <li>Skips it if <code>--only</code> is set to a different id.</li>
+            <li>Runs <code>validation</code>. If it passes, the step is "Already set" and skipped.</li>
+            <li>Otherwise runs the script, streaming output to the terminal and the log.</li>
+            <li>Re-checks <code>validation</code>. A still-failing check counts as a failure.</li>
+            <li>On failure: abort if <code>required</code>, else warn and continue.</li>
+          </ol>
+
+          <h3 id="contract">Step script contract</h3>
+          <p>A step script is plain bash. It inherits this environment:</p>
+          <table class="ref">
+            <tr><td><code>MIGRATE_ROOT</code></td><td>repo root — call <code>"$MIGRATE_ROOT/migrate" restore ...</code> to reuse restore phases</td></tr>
+            <tr><td><code>MIGRATION_DATA</code></td><td>data directory (<code>payload/</code>, <code>manifest/</code>, <code>secrets/</code>); also aliased as <code>BASE</code></td></tr>
+            <tr><td><code>STEP_ID</code></td><td>this step's id</td></tr>
+            <tr><td><code>CFG_*</code></td><td>every key from <code>config</code></td></tr>
+          </table>
+          <p class="muted">Make it idempotent, return non-zero only on real failure, and prefer a manifest <code>validation</code> over re-checking inside the script.</p>
+
+          <h3 id="example">Example step</h3>
+          <div class="codewrap">
+            <button class="copy">copy</button>
+            <pre class="block"><code>{
+  "id": "dotfiles",
+  "title": "Dotfiles",
+  "subtitle": "Clone the repo and run its installer",
+  "run": "steps/dotfiles.sh",
+  "validation": "test -e $HOME/.config/dotfiles",
+  "required": false
+}</code></pre>
+          </div>
+          <p class="muted">Full examples ship in the repo: <code>manifests/example-homebrew.json</code> and <code>manifests/example-macports.json</code>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap foot-inner">
+      <div><span class="foot-brand">&gt;_ migration-machine</span> · MIT</div>
+      <div class="foot-links">
+        <a href="index.html">Home</a>
+        <a href="docs.html">Docs</a>
+        <a href="https://github.com/callmesukhi/migration-machine" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

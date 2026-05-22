@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>migration-machine — move your Mac setup, no Migration Assistant</title>
+  <meta name="description" content="Capture your Mac config, carry one folder, and provision a new Mac from a manifest you control. Manifest-driven, modular, encrypted secrets, no Migration Assistant or Time Machine.">
+  <meta property="og:title" content="migration-machine">
+  <meta property="og:description" content="Move your whole Mac setup to a new machine without Migration Assistant or Time Machine.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://callmesukhi.github.io/migration-machine/">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="home">
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html"><span class="caret">&gt;_</span> migration-machine</a>
+      <button class="nav-toggle" aria-label="Menu">≡</button>
+      <div class="nav-links">
+        <a href="index.html" data-page="home">Home</a>
+        <a href="docs.html" data-page="docs">Docs</a>
+        <a href="manifest.html" data-page="manifest">Manifest</a>
+        <a class="nav-gh" href="https://github.com/callmesukhi/migration-machine" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="wrap">
+      <div class="eyebrow">// macOS migration toolkit</div>
+      <h1>Move your whole Mac setup.<br><span class="grad">No Migration Assistant.</span></h1>
+      <p class="lede">Capture your config on the old Mac, carry one folder across, and provision the new one from a manifest you control. Packages, dotfiles, macOS defaults, app preferences, and encrypted SSH/GPG keys.</p>
+      <div class="cta">
+        <a class="btn btn-primary" href="docs.html">Get started</a>
+        <a class="btn btn-ghost" href="https://github.com/callmesukhi/migration-machine" target="_blank" rel="noopener">View on GitHub ↗</a>
+      </div>
+
+      <div class="term">
+        <div class="term-bar">
+          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="title">~/migration-machine</span>
+          <button class="copy" data-copy="git clone https://github.com/callmesukhi/migration-machine.git
+cd migration-machine
+./migrate --data ~/Sync/migration capture
+./migrate --data ~/Sync/migration bootstrap -m mymac">copy</button>
+        </div>
+        <div class="term-body">
+<div class="line"><span class="c"># on the OLD Mac</span></div>
+<div class="line"><span class="p">$ </span><span class="cmd">git clone https://github.com/callmesukhi/migration-machine.git</span></div>
+<div class="line"><span class="p">$ </span><span class="cmd">cd migration-machine</span></div>
+<div class="line"><span class="p">$ </span><span class="cmd">./migrate --data ~/Sync/migration capture</span></div>
+<div class="line"><span class="out">  captured payload, manifest, encrypted secrets ✓</span></div>
+<div class="line">&nbsp;</div>
+<div class="line"><span class="c"># on the NEW Mac</span></div>
+<div class="line"><span class="p">$ </span><span class="cmd">./migrate --data ~/Sync/migration bootstrap -m mymac</span><span class="cursor"></span></div>
+        </div>
+      </div>
+
+      <div class="badges">
+        <span class="badge"><b>MIT</b> licensed</span>
+        <span class="badge">pure <b>bash</b>, no runtime</span>
+        <span class="badge"><b>AES-256</b> secrets</span>
+        <span class="badge">Homebrew <b>+</b> MacPorts</span>
+      </div>
+    </div>
+  </header>
+
+  <section>
+    <div class="wrap">
+      <p class="section-h">// why</p>
+      <h2>A migration you can read before you run it</h2>
+      <p class="section-sub">No black box. Every action is a small shell script, declared in a manifest, that you can inspect, dry-run, and override.</p>
+      <div class="grid">
+        <div class="card">
+          <div class="ic">▤</div>
+          <h3>Manifest-driven</h3>
+          <p>Declare your steps in JSON. The engine runs them in order, checks each one, and skips whatever is already done.</p>
+        </div>
+        <div class="card">
+          <div class="ic">⧉</div>
+          <h3>Modular steps</h3>
+          <p>Each step is a small, idempotent script. Drop in your own, reorder them, or run just one with <code>--only</code>.</p>
+        </div>
+        <div class="card">
+          <div class="ic">🔒</div>
+          <h3>Encrypted secrets</h3>
+          <p>SSH and GPG keys travel inside an AES-256 encrypted disk image. Never plaintext, never in the repo.</p>
+        </div>
+        <div class="card">
+          <div class="ic">✓</div>
+          <h3>Validate &amp; dry-run</h3>
+          <p>Every step has a validation check. Preview the entire run with <code>--dry-run</code> before anything is touched.</p>
+        </div>
+        <div class="card">
+          <div class="ic">▣</div>
+          <h3>GUI or CLI</h3>
+          <p>A swiftDialog progress window when there's a desktop, a clean terminal list when there isn't. Auto-detected.</p>
+        </div>
+        <div class="card">
+          <div class="ic">⇄</div>
+          <h3>Tool, not your data</h3>
+          <p>Your captured config lives in a folder you carry. The repo stays generic, so anyone can clone and use it.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <p class="section-h">// how it works</p>
+      <h2>Three moves</h2>
+      <p class="section-sub">Capture once, carry one folder, provision on the other side.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="num">1</div>
+          <h3>Capture</h3>
+          <p>On the old Mac, export dotfiles, packages, macOS defaults, app preferences, and keys into a data folder.</p>
+        </div>
+        <div class="step">
+          <div class="num">2</div>
+          <h3>Carry</h3>
+          <p>Sync or copy that one <code>MIGRATION_DATA</code> folder to the new Mac. Cloud drive, USB, whatever you trust.</p>
+        </div>
+        <div class="step">
+          <div class="num">3</div>
+          <h3>Provision</h3>
+          <p>On the new Mac, run from a manifest: Xcode CLT, a package manager, your dotfiles, settings, and keys.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap" style="text-align:center;">
+      <h2>Ready to set up your next Mac?</h2>
+      <p class="section-sub" style="margin:0 auto 22px;">Clone it, point it at your data folder, and read the docs before your first real run.</p>
+      <div class="cta" style="justify-content:center;">
+        <a class="btn btn-primary" href="docs.html">Read the docs</a>
+        <a class="btn btn-ghost" href="manifest.html">Manifest reference</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap foot-inner">
+      <div><span class="foot-brand">&gt;_ migration-machine</span> · MIT</div>
+      <div class="foot-links">
+        <a href="docs.html">Docs</a>
+        <a href="manifest.html">Manifest</a>
+        <a href="https://github.com/callmesukhi/migration-machine" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/callmesukhi/migration-machine/issues" target="_blank" rel="noopener">Issues</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
