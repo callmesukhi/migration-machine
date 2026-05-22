@@ -1,0 +1,20 @@
+name: site
+
+on:
+  pull_request:
+    paths:
+      - 'site/**'
+      - 'tests/check-site.sh'
+      - '.github/workflows/site.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: validate site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate HTML, links, and assets
+        run: bash tests/check-site.sh
