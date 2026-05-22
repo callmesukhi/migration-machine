@@ -1,0 +1,79 @@
+{
+  "name": "Example: MacPorts machine",
+  "description": "Copy this to a private manifest and fill in your own repo + MacPorts pkg URL. See docs/MANIFEST.md.",
+  "config": {
+    "packageManager": "port",
+    "dotfilesRepo": "https://github.com/YOUR_GITHUB_USERNAME/dotfiles.git",
+    "dotfilesCloneDir": "dotfiles",
+    "dotfilesInstall": "scripts/index.sh",
+    "macportsPkgUrl": "",
+    "portfile": "manifest/portfile.txt",
+    "secretsDmg": "secrets/secrets.dmg"
+  },
+  "steps": [
+    {
+      "id": "xcode-clt",
+      "title": "Xcode Command Line Tools",
+      "subtitle": "Compilers, git, and python3",
+      "run": "steps/xcode-clt.sh",
+      "validation": "/usr/bin/xcode-select -p >/dev/null 2>&1",
+      "required": true
+    },
+    {
+      "id": "package-manager",
+      "title": "MacPorts",
+      "subtitle": "macOS package manager",
+      "run": "steps/package-manager.sh",
+      "validation": "[ -x /opt/local/bin/port ]",
+      "required": true
+    },
+    {
+      "id": "secrets",
+      "title": "SSH & GPG keys",
+      "subtitle": "Restore from the encrypted bundle",
+      "run": "steps/secrets.sh",
+      "validation": "ls $HOME/.ssh/id_* >/dev/null 2>&1",
+      "required": false
+    },
+    {
+      "id": "packages",
+      "title": "Ports",
+      "subtitle": "Install ports from the captured list",
+      "run": "steps/packages.sh",
+      "validation": "",
+      "required": false
+    },
+    {
+      "id": "dotfiles",
+      "title": "Dotfiles",
+      "subtitle": "Clone and run the installer",
+      "run": "steps/dotfiles.sh",
+      "validation": "",
+      "required": false
+    },
+    {
+      "id": "macos-defaults",
+      "title": "macOS system settings",
+      "subtitle": "Apply captured defaults",
+      "run": "steps/macos-defaults.sh",
+      "validation": "",
+      "required": false
+    },
+    {
+      "id": "restore-config",
+      "title": "App preferences & config",
+      "subtitle": "Restore captured app prefs, editor settings, fonts",
+      "run": "steps/restore-config.sh",
+      "validation": "",
+      "required": false
+    },
+    {
+      "id": "touchid-sudo",
+      "title": "TouchID for sudo",
+      "subtitle": "Authenticate sudo with your fingerprint",
+      "run": "steps/touchid-sudo.sh",
+      "validation": "grep -q pam_tid /etc/pam.d/sudo_local 2>/dev/null",
+      "required": false
+    }
+  ]
+}

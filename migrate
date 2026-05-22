@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+#
+# migrate - the migration-machine entrypoint.
+#
+#   migrate [--data DIR] <command> [options]
+#
+# Commands:
+#   capture      Export this Mac's config into the data directory   (run on OLD Mac)
+#   provision    Provision a fresh Mac from a manifest + data        (run on NEW Mac)
+#   restore      Restore captured config only (no provisioning)
+#   bootstrap    Ensure Xcode CLT, then provision                    (bare NEW Mac)
+#   version      Print the version
+#   help         Show this help
+#
+# The data directory holds your captured payload/secrets and is kept SEPARATE
+# from this tool so you can carry it between machines (e.g. a cloud-synced
+# folder). Choose it with --data DIR or the MIGRATION_DATA env var.
+# Default: ~/migration-data
+#
+# Examples:
+#   migrate --data ~/Sync/migration capture
+#   migrate --data ~/Sync/migration provision --manifest example-homebrew --dry-run
+#   migrate provision --list
+#
+set -o pipefail
+
+VERSION="0.1.0"
+
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+  D="$(cd -P "$(dirname "$SOURCE")" && pwd)"; SOURCE="$(readlink "$SOURCE")"
+  [ "${SOURCE#/}" = "$SOURCE" ] && SOURCE="$D/$SOURCE"
+done
+MIGRATE_ROOT="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+export MIGRATE_ROOT
+
+usage() { sed -n '2,30p' "$SOURCE" | sed 's/^#\{0,1\} \{0,1\}//'; }
+
+# Global --data may appear before the command.
+while [ "${1:-}" = "--data" ]; do
+  shift; export MIGRATION_DATA="$1"; shift
+done
+: "${MIGRATION_DATA:=$HOME/migration-data}"
+export MIGRATION_DATA
+
+cmd="${1:-help}"
+[ $# -gt 0 ] && shift
+
+case "$cmd" in
+  capture)   exec /bin/bash "$MIGRATE_ROOT/lib/capture.sh"   "$@" ;;
+  restore)   exec /bin/bash "$MIGRATE_ROOT/lib/restore.sh"   "$@" ;;
+  provision) exec /bin/bash "$MIGRATE_ROOT/lib/provision.sh" "$@" ;;
+  bootstrap) exec /bin/bash "$MIGRATE_ROOT/lib/bootstrap.sh" "$@" ;;
+  version|-v|--version) echo "migration-machine $VERSION" ;;
+  help|-h|--help) usage ;;
+  *) echo "Unknown command: $cmd"; echo; usage; exit 2 ;;
+esac

@@ -1,0 +1,25 @@
+# Captured migration DATA must never be committed (it contains your config and
+# an encrypted secrets bundle). Keep it in MIGRATION_DATA, outside the repo.
+/migration-data/
+/data/
+payload/
+manifest/
+secrets/
+logs/
+backups/
+*.dmg
+
+# Your private, filled-in manifests (the examples are tracked; yours are not)
+manifests/local-*.json
+manifests/*.private.json
+
+# macOS noise
+.DS_Store
+.AppleDouble
+._*
+
+# Editor noise
+*.swp
+*~
+.idea/
+.vscode/
