@@ -101,5 +101,19 @@ PY
 then ok "S6 wizard build: dotfiles + placeholder dropped when no repo"
 else no "S6 wizard build: $(cat /tmp/_mm_w2e)"; fi
 
+# --- Scenario 7: MM_STEPS tolerates whitespace around step ids ---
+newtmp
+MM_PKG_MGR=brew MM_DOTFILES_REPO='git@github.com:example/dotfiles.git' \
+MM_STEPS=' packages , dotfiles ' MIGRATION_DATA="$DATA" \
+  bash "$REPO/lib/wizard.sh" --build-only >/tmp/_mm_w3 2>&1
+if python3 - "$DATA/local-wizard.json" <<'PY' 2>/tmp/_mm_w3e
+import json, sys
+ids = [s["id"] for s in json.load(open(sys.argv[1]))["steps"]]
+assert "packages" in ids, "packages missing with spaced input: %s" % ids
+assert "dotfiles" in ids, "dotfiles missing with spaced input: %s" % ids
+PY
+then ok "S7 wizard build: MM_STEPS tolerates surrounding spaces"
+else no "S7 wizard build: $(cat /tmp/_mm_w3e)"; fi
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

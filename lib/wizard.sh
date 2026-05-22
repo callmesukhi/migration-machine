@@ -76,7 +76,7 @@ base, out = sys.argv[1], sys.argv[2]
 d = json.load(open(base))
 pkg = os.environ.get("MM_PKG_MGR", "brew").strip() or "brew"
 repo = os.environ.get("MM_DOTFILES_REPO", "").strip()
-keep = set(s for s in os.environ.get("MM_STEPS", "").split(",") if s)
+keep = set(s.strip() for s in os.environ.get("MM_STEPS", "").split(",") if s.strip())
 
 cfg = d.get("config") or {}
 cfg["packageManager"] = pkg
@@ -114,7 +114,7 @@ PY
         var base = argv[0], out = argv[1];
         var pkg = (argv[2] || "brew");
         var repo = (argv[3] || "").replace(/^\s+|\s+$/g, "");
-        var keep = {}; (argv[4] || "").split(",").forEach(function(x){ if(x) keep[x] = true; });
+        var keep = {}; (argv[4] || "").split(",").forEach(function(x){ x = x.replace(/^\s+|\s+$/g, ""); if(x) keep[x] = true; });
         var d = JSON.parse(app.read(Path(base)));
         var cfg = d.config || {};
         cfg.packageManager = pkg;
