@@ -111,7 +111,7 @@ PY
       function run(argv){
         var app = Application.currentApplication(); app.includeStandardAdditions = true;
         var base = argv[0], out = argv[1];
-        var pkg = (argv[2] || "brew");
+        var pkg = (argv[2] || "brew").replace(/^\s+|\s+$/g, "") || "brew";
         var repo = (argv[3] || "").replace(/^\s+|\s+$/g, "");
         var keep = {}; (argv[4] || "").split(",").forEach(function(x){ x = x.replace(/^\s+|\s+$/g, ""); if(x) keep[x] = true; });
         var d = JSON.parse(app.read(Path(base)));
