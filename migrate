@@ -9,6 +9,7 @@
 #   provision    Provision a fresh Mac from a manifest + data        (run on NEW Mac)
 #   restore      Restore captured config only (no provisioning)
 #   bootstrap    Ensure Xcode CLT, then provision                    (bare NEW Mac)
+#   wizard       Guided GUI setup with swiftDialog                    (run on either)
 #   version      Print the version
 #   help         Show this help
 #
@@ -51,6 +52,7 @@ case "$cmd" in
   restore)   exec /bin/bash "$MIGRATE_ROOT/lib/restore.sh"   "$@" ;;
   provision) exec /bin/bash "$MIGRATE_ROOT/lib/provision.sh" "$@" ;;
   bootstrap) exec /bin/bash "$MIGRATE_ROOT/lib/bootstrap.sh" "$@" ;;
+  wizard)    exec /bin/bash "$MIGRATE_ROOT/lib/wizard.sh"    "$@" ;;
   version|-v|--version) echo "migration-machine $VERSION" ;;
   help|-h|--help) usage ;;
   *) echo "Unknown command: $cmd"; echo; usage; exit 2 ;;
