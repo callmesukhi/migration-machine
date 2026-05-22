@@ -1,0 +1,9 @@
+{
+  "name": "test-req",
+  "config": {},
+  "steps": [
+    {"id":"stepA2","title":"Runs first","run":"tests/fixtures/steps/ok.sh","validation":"","required":false},
+    {"id":"stepE","title":"Required fail","run":"tests/fixtures/steps/fail.sh","validation":"","required":true},
+    {"id":"stepF","title":"After abort","run":"tests/fixtures/steps/ok.sh","validation":"","required":false}
+  ]
+}

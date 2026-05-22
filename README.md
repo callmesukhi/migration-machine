@@ -4,7 +4,21 @@ Move your whole Mac setup to a new machine without Migration Assistant or Time M
 
 It is a small, dependency-light, manifest-driven engine with modular step scripts. You decide what runs by editing JSON, not by hacking the engine.
 
-> Status: research-grade. The control flow is tested; the macOS-specific commands (Homebrew, MacPorts, `softwareupdate`, `hdiutil`, `pam_tid`) have conventional implementations but you should always do a `--dry-run` first and treat your first real run as a rehearsal.
+## Status &amp; testing
+
+Early (`0.1.x`). Use it with eyes open.
+
+What is tested: the engine's control flow is covered by `tests/run.sh` and runs in CI on every push (manifest parsing, validation skip/confirm, dry-run, `--only`, optional vs. required failure, abort). This logic is OS-independent, so the tests run on Linux.
+
+What is NOT yet verified: the macOS-specific commands have conventional implementations but have not been exercised on real hardware end to end. That includes the Xcode CLT install, Homebrew/MacPorts install, `hdiutil` encrypt/mount of the secrets bundle, `defaults` import, the `pam_tid` sudo edit, and the swiftDialog UI. Always run `--dry-run` first and treat your first real run as a rehearsal on a spare Mac or VM.
+
+Tested on (verified end to end):
+
+| macOS | Chip | Package manager | By |
+| --- | --- | --- | --- |
+| _none yet_ | | | |
+
+If you run it for real, a PR adding a row here is the most valuable contribution you can make.
 
 ## What it does
 

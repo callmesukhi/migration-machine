@@ -1,0 +1,10 @@
+{
+  "name": "test-ok",
+  "config": { "packageManager": "brew" },
+  "steps": [
+    {"id":"stepA","title":"Always run","run":"tests/fixtures/steps/ok.sh","validation":"","required":false},
+    {"id":"stepB","title":"Already satisfied","run":"tests/fixtures/steps/ok.sh","validation":"true","required":false},
+    {"id":"stepC","title":"Validate after run","run":"tests/fixtures/steps/make_marker.sh","validation":"test -f \"$MARKER_DIR/cmarker\"","required":false},
+    {"id":"stepD","title":"Optional fail","run":"tests/fixtures/steps/fail.sh","validation":"","required":false}
+  ]
+}

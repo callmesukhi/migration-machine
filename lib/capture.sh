@@ -81,6 +81,8 @@ copy_dir() {
     local exargs=()
     local ex
     for ex in "$@"; do exargs+=( --exclude "$ex" ); done
+    # Intentional word-splitting of the (possibly empty) excludes array.
+    # shellcheck disable=SC2086
     if rsync -a ${exargs[@]+"${exargs[@]}"} "$src"/ "$destdir/$base"/ 2>>"$LOG"; then
       log "  + $src/  (dir)"
     else

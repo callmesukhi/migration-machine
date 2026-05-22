@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- `tests/run.sh` engine test harness with fixtures, covering validation
+  skip/confirm, dry-run, `--only`, and optional vs. required failure.
+- GitHub Actions CI: engine tests (gating) and shellcheck (advisory).
+- README "Status & testing" section with a "Tested on" table.
+
 ## [0.1.0] - 2026-05-22
 
 Initial release.

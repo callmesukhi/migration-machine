@@ -1,0 +1,29 @@
+name: ci
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  tests:
+    name: engine tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run engine tests
+        run: bash tests/run.sh
+
+  shellcheck:
+    name: shellcheck (advisory)
+    runs-on: ubuntu-latest
+    # Advisory for now: style/warning findings should not block merges until the
+    # codebase has had a first pass with shellcheck. Promote to a required check
+    # once `shellcheck` runs clean locally.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Lint shell
+        run: shellcheck migrate lib/*.sh steps/*.sh tests/*.sh tests/fixtures/steps/*.sh
