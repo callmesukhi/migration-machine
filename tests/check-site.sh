@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 #
 # tests/check-site.sh - validate the static site in site/.
-# Confirms every page parses as HTML and that all internal links and assets
-# resolve to a file. External URLs, anchors, and mailto: links are skipped.
+# Checks that href/src links and assets in the HTML resolve to a file, and
+# that each page is parseable by Python's HTMLParser. Does NOT check HTML
+# well-formedness, nor assets referenced via CSS url(), @import, or srcset.
+# External URLs, anchors, and mailto: links are skipped.
 # Runs in CI on PRs that touch site/, and is runnable locally.
 #
 set -u
@@ -66,5 +68,5 @@ if problems:
         print("  - " + p)
     sys.exit(1)
 
-print("Site validation OK: %d page(s), all links and assets resolve." % len(html_files))
+print("Site validation OK: %d page(s), all href/src links resolve." % len(html_files))
 PY
