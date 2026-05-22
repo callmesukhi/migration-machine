@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+#
+# tests/check-site.sh - validate the static site in site/.
+# Confirms every page parses as HTML and that all internal links and assets
+# resolve to a file. External URLs, anchors, and mailto: links are skipped.
+# Runs in CI on PRs that touch site/, and is runnable locally.
+#
+set -u
+
+SOURCE="${BASH_SOURCE[0]}"
+DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+SITE="$(cd -P "$DIR/.." && pwd)/site"
+
+if [ ! -d "$SITE" ]; then
+  echo "No site/ directory at $SITE"
+  exit 1
+fi
+
+python3 - "$SITE" <<'PY'
+import sys, os
+from html.parser import HTMLParser
+from urllib.parse import urlparse
+
+site = sys.argv[1]
+problems = []
+
+class Collector(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.refs = []
+    def handle_starttag(self, tag, attrs):
+        d = dict(attrs)
+        for key in ("href", "src"):
+            if d.get(key):
+                self.refs.append(d[key])
+
+html_files = sorted(f for f in os.listdir(site) if f.endswith(".html"))
+if not html_files:
+    problems.append("no HTML files found in site/")
+
+for name in html_files:
+    text = open(os.path.join(site, name), encoding="utf-8").read()
+    c = Collector()
+    try:
+        c.feed(text)
+    except Exception as e:
+        problems.append("%s: HTML parse error: %s" % (name, e))
+        continue
+    for ref in c.refs:
+        u = urlparse(ref)
+        if u.scheme or u.netloc:                 # external URL
+            continue
+        if ref.startswith("#") or ref.startswith("mailto:"):
+            continue
+        target = ref.split("#")[0].split("?")[0]
+        if not target:
+            continue
+        resolved = os.path.join(site, target.lstrip("/")) if target.startswith("/") \
+            else os.path.join(site, target)
+        if not os.path.exists(resolved):
+            problems.append("%s: broken link/asset -> %s" % (name, ref))
+
+if problems:
+    print("Site validation FAILED:")
+    for p in problems:
+        print("  - " + p)
+    sys.exit(1)
+
+print("Site validation OK: %d page(s), all links and assets resolve." % len(html_files))
+PY
