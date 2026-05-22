@@ -77,7 +77,7 @@ backup_then_copy() {
   local src="$1" dest="$2"
   [ -e "$src" ] || return 0
   if [ -e "$dest" ]; then
-    local rel="${dest#$HOME/}"
+    local rel="${dest#"$HOME"/}"
     if [ "$DRY_RUN" = "1" ]; then
       log "  DRY: backup existing $dest"
     else
@@ -166,7 +166,7 @@ phase_dotfiles() {
 # ----------------------------------------------------------------------------
 phase_config() {
   should_run config || return 0
-  section "~/.config tool configs"
+  section "Tool configs under ~/.config"
   [ -d "$PAYLOAD/config" ] || { log "No ~/.config captured; skipping."; return 0; }
   confirm "Restore ~/.config tool directories?" || { log "Skipped."; return 0; }
   mkdir -p "$HOME/.config"

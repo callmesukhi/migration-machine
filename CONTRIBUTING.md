@@ -27,8 +27,8 @@ for f in migrate lib/*.sh steps/*.sh; do bash -n "$f" || echo "BAD $f"; done
 # validate manifests
 for j in manifests/*.json; do python3 -c "import json,sys;json.load(open('$j'))" || echo "BAD $j"; done
 
-# shellcheck if you have it
-shellcheck migrate lib/*.sh steps/*.sh
+# shellcheck if you have it (CI gates on --severity=warning)
+shellcheck --severity=warning migrate lib/*.sh steps/*.sh tests/*.sh
 
 # a dry run changes nothing and exercises the engine
 ./migrate --data /tmp/md provision -m example-homebrew --dry-run --ui cli

@@ -1,0 +1,5 @@
+---
+requesters:
+  callmesukhi:
+    labels:
+      - privileged-requester
