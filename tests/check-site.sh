@@ -41,7 +41,8 @@ if not html_files:
     problems.append("no HTML files found in site/")
 
 for name in html_files:
-    text = open(os.path.join(site, name), encoding="utf-8").read()
+    with open(os.path.join(site, name), encoding="utf-8") as f:
+        text = f.read()
     c = Collector()
     try:
         c.feed(text)

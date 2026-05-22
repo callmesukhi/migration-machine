@@ -7,6 +7,9 @@ on:
       - 'tests/check-site.sh'
       - '.github/workflows/site.yml'
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     name: validate site
