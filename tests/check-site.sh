@@ -24,6 +24,7 @@ from html.parser import HTMLParser
 from urllib.parse import urlparse
 
 site = sys.argv[1]
+site_root = os.path.realpath(site)
 problems = []
 
 class Collector(HTMLParser):
@@ -60,7 +61,10 @@ for name in html_files:
             continue
         resolved = os.path.join(site, target.lstrip("/")) if target.startswith("/") \
             else os.path.join(site, target)
-        if not os.path.exists(resolved):
+        real = os.path.realpath(resolved)
+        if real != site_root and not real.startswith(site_root + os.sep):
+            problems.append("%s: link escapes site/ -> %s" % (name, ref))
+        elif not os.path.exists(real):
             problems.append("%s: broken link/asset -> %s" % (name, ref))
 
 if problems:
