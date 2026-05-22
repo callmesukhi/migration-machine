@@ -86,11 +86,10 @@ else:
     cfg.pop("dotfilesRepo", None)   # no repo => don't carry the example placeholder
 d["config"] = cfg
 
-always = {"xcode-clt", "package-manager"}   # required infrastructure, always in
 steps = []
 for s in (d.get("steps") or []):
     sid = s.get("id")
-    if sid in always:
+    if s.get("required"):                   # honor the manifest's own required flag
         steps.append(s); continue
     if sid == "dotfiles" and not repo:
         continue                            # no repo => no dotfiles step
@@ -120,11 +119,10 @@ PY
         cfg.packageManager = pkg;
         if (repo) { cfg.dotfilesRepo = repo; } else { delete cfg.dotfilesRepo; }
         d.config = cfg;
-        var always = { "xcode-clt": true, "package-manager": true };
         var steps = [];
         (d.steps || []).forEach(function(s){
           var id = s.id;
-          if (always[id]) { steps.push(s); return; }
+          if (s.required) { steps.push(s); return; }   // honor the manifest required flag
           if (id === "dotfiles" && !repo) return;
           if (keep[id]) steps.push(s);
         });
@@ -164,12 +162,16 @@ fi
 # ----------------------------------------------------------------------------
 # Per-run temp file for the dialog's JSON output, created under a private umask
 # so it is not world-readable and cannot be pre-created by another user.
+# Only a temp file the wizard created is ours to delete. If DIALOG_OUT was set in
+# the environment (debugging), leave it alone: never rm a caller-provided path.
+DIALOG_OUT_OWNED=0
 if [ -z "${DIALOG_OUT:-}" ]; then
   _old_umask="$(umask)"; umask 077
   DIALOG_OUT="$(mktemp "${TMPDIR:-/tmp}/mm-wizard-dialog.XXXXXX")" \
     || { umask "$_old_umask"; echo "Could not create a temp file for the dialog." >&2; exit 1; }
   umask "$_old_umask"
-  trap 'rm -f "$DIALOG_OUT"' EXIT
+  DIALOG_OUT_OWNED=1
+  trap '[ "$DIALOG_OUT_OWNED" = 1 ] && rm -f "$DIALOG_OUT"' EXIT
 fi
 
 have_dialog() { resolve_dialog; }
@@ -351,7 +353,7 @@ export MIGRATE_UI=gui
 
 if [ "$ROLE" = "capture" ]; then
   if ! screen_confirm_capture "$DATA_DIR"; then echo "Cancelled."; exit 0; fi
-  rm -f "$DIALOG_OUT"
+  [ "$DIALOG_OUT_OWNED" = 1 ] && rm -f "$DIALOG_OUT"
   exec "$MIGRATE" --data "$DATA_DIR" capture
 fi
 
@@ -409,5 +411,5 @@ if ! screen_confirm_apply; then
   exit 0
 fi
 
-rm -f "$DIALOG_OUT"
+[ "$DIALOG_OUT_OWNED" = 1 ] && rm -f "$DIALOG_OUT"
 exec "$MIGRATE" --data "$DATA_DIR" bootstrap -m "$WIZARD_FILE"
