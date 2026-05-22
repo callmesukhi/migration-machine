@@ -10,6 +10,8 @@ class MigrationMachine < Formula
   #   sha256 "<output of: shasum -a 256 on that tarball>"
   head "https://github.com/callmesukhi/migration-machine.git", branch: "main"
 
+  depends_on :macos
+
   # No build step: this is plain bash. We stage the tool under libexec and put a
   # thin launcher on PATH so `migrate` resolves its own lib/, steps/, manifests/.
   def install

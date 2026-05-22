@@ -67,5 +67,39 @@ rc=$?
 [ ! -f "$MARKER_DIR/ran_stepF" ] && ok "S4 stepF skipped (aborted)" || no "S4 stepF ran after abort"
 grep -q 'Stopped at required step' /tmp/_mm_s4 && ok "S4 abort message shown" || no "S4 no abort message"
 
+# --- Scenario 5: wizard manifest builder (--build-only, headless) ---
+newtmp
+MM_PKG_MGR=brew MM_DOTFILES_REPO='git@github.com:example/dotfiles.git' \
+MM_STEPS='secrets,packages,dotfiles,touchid-sudo' MIGRATION_DATA="$DATA" \
+  bash "$REPO/lib/wizard.sh" --build-only >/tmp/_mm_w1 2>&1
+if python3 - "$DATA/local-wizard.json" <<'PY' 2>/tmp/_mm_w1e
+import json, sys
+d = json.load(open(sys.argv[1]))
+ids = [s["id"] for s in d["steps"]]
+assert d["config"]["packageManager"] == "brew", "packageManager"
+assert d["config"].get("dotfilesRepo") == "git@github.com:example/dotfiles.git", "repo"
+assert ids[:2] == ["xcode-clt", "package-manager"], "infra first: %s" % ids
+for want in ("secrets", "packages", "dotfiles", "touchid-sudo"):
+    assert want in ids, "missing %s in %s" % (want, ids)
+for nope in ("macos-defaults", "restore-config"):
+    assert nope not in ids, "unticked %s present in %s" % (nope, ids)
+PY
+then ok "S5 wizard build: config + selected steps correct"
+else no "S5 wizard build: $(cat /tmp/_mm_w1e)"; fi
+
+# --- Scenario 6: no repo => dotfiles step AND placeholder repo are dropped ---
+newtmp
+MM_PKG_MGR=brew MM_DOTFILES_REPO='' MM_STEPS='dotfiles,packages' MIGRATION_DATA="$DATA" \
+  bash "$REPO/lib/wizard.sh" --build-only >/tmp/_mm_w2 2>&1
+if python3 - "$DATA/local-wizard.json" <<'PY' 2>/tmp/_mm_w2e
+import json, sys
+d = json.load(open(sys.argv[1]))
+ids = [s["id"] for s in d["steps"]]
+assert "dotfiles" not in ids, "dotfiles should be dropped: %s" % ids
+assert "dotfilesRepo" not in d["config"], "placeholder repo should be cleared"
+PY
+then ok "S6 wizard build: dotfiles + placeholder dropped when no repo"
+else no "S6 wizard build: $(cat /tmp/_mm_w2e)"; fi
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

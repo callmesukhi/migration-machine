@@ -53,7 +53,13 @@ fi
 
 # When run via `curl | bash` there is no controlling terminal, so reattach one
 # so the wizard's sudo and passphrase prompts can be answered.
-[ -t 0 ] || exec < /dev/tty
+if [ ! -t 0 ]; then
+  if [ -r /dev/tty ]; then
+    exec < /dev/tty
+  else
+    die "an interactive Terminal is required to launch the guided setup. Run this installer from Terminal, or set MM_NO_LAUNCH=1 to install without launching."
+  fi
+fi
 
 say "Launching the guided setup..."
 exec /bin/bash "$DEST/migrate" wizard

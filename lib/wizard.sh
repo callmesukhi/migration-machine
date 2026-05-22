@@ -82,6 +82,8 @@ cfg = d.get("config") or {}
 cfg["packageManager"] = pkg
 if repo:
     cfg["dotfilesRepo"] = repo
+else:
+    cfg.pop("dotfilesRepo", None)   # no repo => don't carry the example placeholder
 d["config"] = cfg
 
 always = {"xcode-clt", "package-manager"}   # required infrastructure, always in
@@ -116,7 +118,7 @@ PY
         var d = JSON.parse(app.read(Path(base)));
         var cfg = d.config || {};
         cfg.packageManager = pkg;
-        if (repo) cfg.dotfilesRepo = repo;
+        if (repo) { cfg.dotfilesRepo = repo; } else { delete cfg.dotfilesRepo; }
         d.config = cfg;
         var always = { "xcode-clt": true, "package-manager": true };
         var steps = [];
@@ -241,6 +243,14 @@ is_true() {
   esac
 }
 
+# Trim leading/trailing whitespace.
+trim() {
+  local s="$1"
+  s="${s#"${s%%[![:space:]]*}"}"
+  s="${s%"${s##*[![:space:]]}"}"
+  printf '%s' "$s"
+}
+
 # Expand a leading ~ or ~/ (not ~user) and trim surrounding whitespace.
 clean_path() {
   local p="$1" tilde='~'
@@ -315,6 +325,14 @@ screen_confirm_capture() {
 # ----------------------------------------------------------------------------
 # Flow
 # ----------------------------------------------------------------------------
+# This is a desktop GUI flow. If there is no console session (e.g. over SSH),
+# fail fast with a clear message instead of letting swiftDialog error opaquely.
+if [ -n "${SSH_TTY:-}" ] || ! gui_session; then
+  echo "The guided setup needs a desktop session on the Mac itself, not SSH." >&2
+  echo "From a terminal you can still run: migrate capture  or  migrate provision -m <manifest>" >&2
+  exit 1
+fi
+
 ensure_dialog || exit 1
 
 screen_welcome
@@ -338,22 +356,36 @@ if [ "$ROLE" = "capture" ]; then
 fi
 
 # --- provision ---
-if ! screen_provision_opts; then echo "Cancelled."; exit 0; fi
-
-case "$(json_get "Package manager")" in
-  MacPorts|port) MM_PKG_MGR="port" ;;
-  *)             MM_PKG_MGR="brew" ;;
-esac
-MM_DOTFILES_REPO="$(json_get "Dotfiles repo (optional)")"
-
-MM_STEPS=""
 add_step() { MM_STEPS="${MM_STEPS:+$MM_STEPS,}$1"; }
-is_true "$(json_get "SSH and GPG keys")"          && add_step "secrets"
-is_true "$(json_get "Packages and apps")"         && add_step "packages"
-is_true "$(json_get "Dotfiles")"                  && add_step "dotfiles"
-is_true "$(json_get "macOS system settings")"     && add_step "macos-defaults"
-is_true "$(json_get "App preferences and config")" && add_step "restore-config"
-is_true "$(json_get "TouchID for sudo")"          && add_step "touchid-sudo"
+while :; do
+  if ! screen_provision_opts; then echo "Cancelled."; exit 0; fi
+
+  case "$(json_get "Package manager")" in
+    MacPorts|port) MM_PKG_MGR="port" ;;
+    *)             MM_PKG_MGR="brew" ;;
+  esac
+  MM_DOTFILES_REPO="$(trim "$(json_get "Dotfiles repo (optional)")")"
+
+  MM_STEPS=""
+  dotfiles_picked=0
+  is_true "$(json_get "SSH and GPG keys")"           && add_step "secrets"
+  is_true "$(json_get "Packages and apps")"          && add_step "packages"
+  is_true "$(json_get "Dotfiles")"                   && { add_step "dotfiles"; dotfiles_picked=1; }
+  is_true "$(json_get "macOS system settings")"      && add_step "macos-defaults"
+  is_true "$(json_get "App preferences and config")" && add_step "restore-config"
+  is_true "$(json_get "TouchID for sudo")"           && add_step "touchid-sudo"
+
+  # Dotfiles selected but no repo => the step would be silently dropped. Tell the
+  # user and re-prompt so the plan matches what they actually ticked.
+  if [ "$dotfiles_picked" = "1" ] && [ -z "$MM_DOTFILES_REPO" ]; then
+    "$DIALOG_BIN" --title "Dotfiles repo needed" \
+      --message "You chose to restore Dotfiles but left the repo blank. Add your dotfiles git URL, or uncheck Dotfiles." \
+      --icon "SF=exclamationmark.triangle" --button1text "Back" \
+      --moveable --ontop --width 620 >/dev/null 2>&1
+    continue
+  fi
+  break
+done
 export MM_PKG_MGR MM_DOTFILES_REPO MM_STEPS
 
 # Write the generated manifest into the user-writable data dir (the install dir
@@ -365,8 +397,12 @@ if ! build_manifest "$(base_for_pkg "$MM_PKG_MGR")" "$WIZARD_FILE"; then
   exit 1
 fi
 
-# Preview (dry run) through the engine, then confirm the real run.
-"$MIGRATE" --data "$DATA_DIR" provision -m "$WIZARD_FILE" --dry-run
+# Preview (dry run) through the engine. If the preview itself fails (bad manifest,
+# missing files), stop here instead of proceeding to the real run.
+if ! "$MIGRATE" --data "$DATA_DIR" provision -m "$WIZARD_FILE" --dry-run; then
+  echo "Dry-run preview failed. Fix the reported errors before continuing." >&2
+  exit 1
+fi
 
 if ! screen_confirm_apply; then
   echo "Stopped. Your data folder and the generated manifest are saved."
