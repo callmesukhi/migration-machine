@@ -16,6 +16,11 @@ All notable changes to this project are documented here. The format is based on
 - `site` workflow and `tests/check-site.sh`: validate that each page parses and
   that all `href`/`src` links and assets resolve, on PRs touching `site/`.
 - README banner and CI/site/pages status badges.
+- Guided GUI setup: `migrate wizard`, a swiftDialog front-end over the engine
+  that builds a manifest from a few prompts and previews it before applying.
+- One-line installer (`site/install.sh`, served from the site) for a no-git
+  bootstrap that downloads the tool and launches the wizard.
+- Homebrew formula under `packaging/homebrew/` for `brew install` distribution.
 
 ## [0.1.0] - 2026-05-22
 
