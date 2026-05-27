@@ -1,10 +1,9 @@
 class MigrationMachine < Formula
   desc "Move your Mac setup to a new machine without Migration Assistant"
   homepage "https://migration-machine.callmesukhi.com"
-  license "MIT"
-
   url "https://github.com/callmesukhi/migration-machine/archive/refs/tags/v0.1.0.tar.gz"
   sha256 "113e9f2eb0eea5c4cd50e76ff03a4d4ca5fe6c61802837968addc213a3237421"
+  license "MIT"
   head "https://github.com/callmesukhi/migration-machine.git", branch: "main"
 
   depends_on :macos
