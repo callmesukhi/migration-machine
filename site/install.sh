@@ -59,12 +59,17 @@ mkdir -p "$stage"
 # The archive nests everything under <repo>-<ref>/; strip that one level.
 tar -xzf "$tmp/mm.tar.gz" -C "$stage" --strip-components=1 || die "extract failed."
 [ -f "$stage/migrate" ] || die "install looks incomplete (no migrate in the downloaded archive)."
-# Never delete a directory that is not already a migration-machine install.
-if [ -e "$DEST" ] && [ ! -f "$DEST/migrate" ]; then
-  die "$DEST exists and is not a migration-machine install; refusing to overwrite it."
+# Only replace a directory that clearly matches a prior migration-machine
+# install (its real structure), never one that merely contains a file named
+# "migrate". Anything else is left untouched and the install aborts.
+if [ -e "$DEST" ]; then
+  if [ -f "$DEST/migrate" ] && [ -f "$DEST/lib/core.sh" ] && [ -d "$DEST/steps" ] && [ -d "$DEST/manifests" ]; then
+    rm -rf "$DEST"
+  else
+    die "$DEST already exists and does not look like a migration-machine install. Move it aside, or set MIGRATION_MACHINE_HOME to a dedicated folder."
+  fi
 fi
 mkdir -p "$(dirname "$DEST")"
-rm -rf "$DEST"
 mv "$stage" "$DEST" || die "could not install to $DEST."
 
 say "Installed to $DEST"
