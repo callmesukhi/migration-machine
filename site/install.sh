@@ -40,10 +40,17 @@ tmp="$(mktemp -d "${TMPDIR:-/tmp}/migration-machine.XXXXXX")" || die "could not 
 trap 'rm -rf "$tmp"' EXIT
 curl -fsSL "$TARBALL" -o "$tmp/mm.tar.gz" || die "download failed: $TARBALL"
 
-# Refuse to install over a path whose removal would be catastrophic.
-case "$DEST" in
-  "$HOME" | "/" | "") die "refusing to install to '$DEST'. Set MIGRATION_MACHINE_HOME to a dedicated folder." ;;
+# Refuse dangerous or non-dedicated targets. Canonicalize first so trailing
+# slashes or dot segments ("$HOME/", "$HOME/.", "//") cannot slip past the check.
+[ -n "$DEST" ] || die "MIGRATION_MACHINE_HOME is empty."
+_parent="$(cd "$(dirname "$DEST")" 2>/dev/null && pwd -P)" || die "install path's parent does not exist: $DEST"
+_name="$(basename "$DEST")"
+case "$_name" in
+  "" | "/" | "." | "..") die "refusing to install to '$DEST'. Choose a dedicated subfolder." ;;
 esac
+DEST="${_parent%/}/$_name"
+_home="$(cd "$HOME" 2>/dev/null && pwd -P || printf '%s' "$HOME")"
+[ "$DEST" = "${_home%/}" ] && die "refusing to install to your home directory. Set MIGRATION_MACHINE_HOME to a dedicated folder."
 
 # Extract into a staging dir, verify it, then atomically replace $DEST so a
 # re-install never leaves stale files from an older version behind.
@@ -52,6 +59,10 @@ mkdir -p "$stage"
 # The archive nests everything under <repo>-<ref>/; strip that one level.
 tar -xzf "$tmp/mm.tar.gz" -C "$stage" --strip-components=1 || die "extract failed."
 [ -f "$stage/migrate" ] || die "install looks incomplete (no migrate in the downloaded archive)."
+# Never delete a directory that is not already a migration-machine install.
+if [ -e "$DEST" ] && [ ! -f "$DEST/migrate" ]; then
+  die "$DEST exists and is not a migration-machine install; refusing to overwrite it."
+fi
 mkdir -p "$(dirname "$DEST")"
 rm -rf "$DEST"
 mv "$stage" "$DEST" || die "could not install to $DEST."

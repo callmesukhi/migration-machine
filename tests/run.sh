@@ -115,5 +115,19 @@ PY
 then ok "S7 wizard build: MM_STEPS tolerates surrounding spaces"
 else no "S7 wizard build: $(cat /tmp/_mm_w3e)"; fi
 
+# --- Scenario 8: MacPorts manifest carries the provided installer URL ---
+newtmp
+MM_PKG_MGR=port MM_MACPORTS_URL='https://example.com/MacPorts-2.9.0-14-Sonoma.pkg' \
+MM_STEPS='packages' MIGRATION_DATA="$DATA" \
+  bash "$REPO/lib/wizard.sh" --build-only >/tmp/_mm_w4 2>&1
+if python3 - "$DATA/local-wizard.json" <<'PY' 2>/tmp/_mm_w4e
+import json, sys
+d = json.load(open(sys.argv[1]))
+assert d["config"]["packageManager"] == "port", "packageManager: %s" % d["config"].get("packageManager")
+assert d["config"].get("macportsPkgUrl") == "https://example.com/MacPorts-2.9.0-14-Sonoma.pkg", "url: %s" % d["config"].get("macportsPkgUrl")
+PY
+then ok "S8 wizard build: MacPorts installer URL carried into config"
+else no "S8 wizard build: $(cat /tmp/_mm_w4e)"; fi
+
 printf '\n%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

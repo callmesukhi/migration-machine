@@ -69,6 +69,7 @@ build_manifest() {
   if has_cmd python3; then
     MM_PKG_MGR="${MM_PKG_MGR:-brew}" \
     MM_DOTFILES_REPO="${MM_DOTFILES_REPO:-}" \
+    MM_MACPORTS_URL="${MM_MACPORTS_URL:-}" \
     MM_STEPS="${MM_STEPS:-}" \
     python3 - "$base" "$out" <<'PY'
 import json, os, sys
@@ -76,6 +77,7 @@ base, out = sys.argv[1], sys.argv[2]
 d = json.load(open(base))
 pkg = os.environ.get("MM_PKG_MGR", "brew").strip() or "brew"
 repo = os.environ.get("MM_DOTFILES_REPO", "").strip()
+mpurl = os.environ.get("MM_MACPORTS_URL", "").strip()
 keep = set(s.strip() for s in os.environ.get("MM_STEPS", "").split(",") if s.strip())
 
 cfg = d.get("config") or {}
@@ -84,6 +86,8 @@ if repo:
     cfg["dotfilesRepo"] = repo
 else:
     cfg.pop("dotfilesRepo", None)   # no repo => don't carry the example placeholder
+if mpurl:
+    cfg["macportsPkgUrl"] = mpurl
 d["config"] = cfg
 
 steps = []
@@ -113,11 +117,13 @@ PY
         var base = argv[0], out = argv[1];
         var pkg = (argv[2] || "brew").replace(/^\s+|\s+$/g, "") || "brew";
         var repo = (argv[3] || "").replace(/^\s+|\s+$/g, "");
+        var mpurl = (argv[5] || "").replace(/^\s+|\s+$/g, "");
         var keep = {}; (argv[4] || "").split(",").forEach(function(x){ x = x.replace(/^\s+|\s+$/g, ""); if(x) keep[x] = true; });
         var d = JSON.parse(app.read(Path(base)));
         var cfg = d.config || {};
         cfg.packageManager = pkg;
         if (repo) { cfg.dotfilesRepo = repo; } else { delete cfg.dotfilesRepo; }
+        if (mpurl) cfg.macportsPkgUrl = mpurl;
         d.config = cfg;
         var steps = [];
         (d.steps || []).forEach(function(s){
@@ -131,7 +137,7 @@ PY
         d.description = "Created by `migrate wizard`. Safe to edit or delete.";
         app.write(JSON.stringify(d, null, 2) + "\n", { to: Path(out), overwriting: true });
         return "ok";
-      }' "$base" "$out" "${MM_PKG_MGR:-brew}" "${MM_DOTFILES_REPO:-}" "${MM_STEPS:-}"
+      }' "$base" "$out" "${MM_PKG_MGR:-brew}" "${MM_DOTFILES_REPO:-}" "${MM_STEPS:-}" "${MM_MACPORTS_URL:-}"
   else
     echo "No JSON engine available (need python3 or osascript)." >&2
     return 1
@@ -296,6 +302,7 @@ screen_provision_opts() {
     --icon "SF=gearshape.2" \
     --selecttitle "Package manager" --selectvalues "Homebrew,MacPorts" --selectdefault "Homebrew" \
     --textfield "Dotfiles repo (optional),prompt=git@github.com:you/dotfiles.git" \
+    --textfield "MacPorts installer .pkg URL,prompt=only if you picked MacPorts (from macports.org)" \
     --checkbox "SSH and GPG keys" \
     --checkbox "Packages and apps" \
     --checkbox "Dotfiles" \
@@ -367,6 +374,7 @@ while :; do
     *)             MM_PKG_MGR="brew" ;;
   esac
   MM_DOTFILES_REPO="$(trim "$(json_get "Dotfiles repo (optional)")")"
+  MM_MACPORTS_URL="$(trim "$(json_get "MacPorts installer .pkg URL")")"
 
   MM_STEPS=""
   dotfiles_picked=0
@@ -386,9 +394,20 @@ while :; do
       --moveable --ontop --width 620 >/dev/null 2>&1
     continue
   fi
+
+  # MacPorts has no one-line installer, so its package-manager step needs the
+  # .pkg URL for this macOS version. Require it rather than generate a manifest
+  # that fails later.
+  if [ "$MM_PKG_MGR" = "port" ] && [ -z "$MM_MACPORTS_URL" ]; then
+    "$DIALOG_BIN" --title "MacPorts installer URL needed" \
+      --message "MacPorts has no one-line installer. Paste the .pkg URL for your macOS version from macports.org/install.php, or choose Homebrew instead." \
+      --icon "SF=exclamationmark.triangle" --button1text "Back" \
+      --moveable --ontop --width 680 >/dev/null 2>&1
+    continue
+  fi
   break
 done
-export MM_PKG_MGR MM_DOTFILES_REPO MM_STEPS
+export MM_PKG_MGR MM_DOTFILES_REPO MM_MACPORTS_URL MM_STEPS
 
 # Write the generated manifest into the user-writable data dir (the install dir
 # can be read-only, e.g. a Homebrew Cellar) and pass it to the engine by path.
