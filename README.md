@@ -23,7 +23,7 @@ One command, then a clickable, step-by-step UI. No `git clone`, no flags to lear
 curl -fsSL https://migration-machine.callmesukhi.com/install.sh | bash
 ```
 
-This downloads migration-machine and launches a guided setup powered by [swiftDialog](https://github.com/swiftDialog/swiftDialog). It walks you through backing up your old Mac or setting up the new one, builds a manifest for you, and previews every step as a dry run before anything changes. Already cloned the repo? Just run `./migrate wizard`.
+This downloads migration-machine and launches a guided setup powered by [swiftDialog](https://github.com/swiftDialog/swiftDialog). It walks you through backing up your old Mac or setting up the new one: on the backup path, it confirms and then starts `migrate capture` without a dry-run preview; on the new-Mac setup path, it helps build your manifest and previews each provisioning step as a dry run before anything changes. Already cloned the repo? Just run `./migrate wizard`.
 
 Prefer to read the installer before piping it to a shell (a good habit):
 
