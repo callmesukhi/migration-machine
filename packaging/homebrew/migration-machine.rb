@@ -16,7 +16,7 @@ class MigrationMachine < Formula
       #!/bin/bash
       exec /bin/bash "#{libexec}/migrate" "$@"
     SH
-    chmod 0o755, bin/"migrate"
+    chmod 0755, bin/"migrate"
   end
 
   def caveats
