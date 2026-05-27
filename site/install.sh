@@ -99,15 +99,15 @@ if [ "${MM_NO_LAUNCH:-0}" = "1" ]; then
   exit 0
 fi
 
-# When run via `curl | bash` there is no controlling terminal, so reattach one
-# so the wizard's sudo and passphrase prompts can be answered.
-if [ ! -t 0 ]; then
-  if [ -r /dev/tty ]; then
-    exec < /dev/tty
-  else
-    die "an interactive Terminal is required to launch the guided setup. Run this installer from Terminal, or set MM_NO_LAUNCH=1 to install without launching."
-  fi
-fi
-
+# Launch the wizard. Do NOT redirect this shell's own stdin: under `curl | bash`
+# the script itself is read from stdin, so reattaching /dev/tty here would make
+# bash read the rest of the script from the terminal. Instead give only the
+# wizard its own /dev/tty, and do not exec, so the EXIT trap still cleans up.
 say "Launching the guided setup..."
-exec /bin/bash "$DEST/migrate" wizard
+if [ -t 0 ]; then
+  /bin/bash "$DEST/migrate" wizard
+elif ( exec </dev/tty ) 2>/dev/null; then
+  /bin/bash "$DEST/migrate" wizard </dev/tty
+else
+  die "an interactive Terminal is required to launch the guided setup. Run this installer from Terminal, or set MM_NO_LAUNCH=1 to install without launching."
+fi
