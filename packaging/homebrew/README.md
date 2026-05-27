@@ -20,21 +20,26 @@ setup you do on GitHub; this folder holds the source of truth.
 3. Users then install with:
 
    ```bash
-   brew install --HEAD callmesukhi/tap/migration-machine
+   brew install callmesukhi/tap/migration-machine
    migrate wizard
    ```
 
-## Stable release vs. HEAD
+## Releasing a new version
 
-The committed formula is HEAD-only: it has no stable `url`/`sha256` yet, so it
-installs from the latest `main` with `--HEAD` (as shown above). To offer a
-stable, versioned install, tag a release and add a stable block to the formula:
+The formula pins a stable release via `url` + `sha256` (currently `v0.1.0`).
+`--HEAD` is still available for installing the latest `main`:
 
 ```bash
-git tag v0.1.0 && git push --tags
-curl -fsSL https://github.com/callmesukhi/migration-machine/archive/refs/tags/v0.1.0.tar.gz | shasum -a 256
-# Add `url` + `sha256` lines to migration-machine.rb (a template is in the
-# formula's comments). Then users can drop the --HEAD flag.
+brew install --HEAD callmesukhi/tap/migration-machine
+```
+
+To cut a new version, tag it, hash the tarball, bump the formula, and copy it
+into the tap repo:
+
+```bash
+git tag vX.Y.Z && git push origin vX.Y.Z
+curl -fsSL https://github.com/callmesukhi/migration-machine/archive/refs/tags/vX.Y.Z.tar.gz | shasum -a 256
+# update `url` and `sha256` in migration-machine.rb, then copy it into homebrew-tap/Formula/
 ```
 
 ## Notes
