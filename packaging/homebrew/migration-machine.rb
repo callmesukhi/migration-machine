@@ -3,11 +3,8 @@ class MigrationMachine < Formula
   homepage "https://migration-machine.callmesukhi.com"
   license "MIT"
 
-  # HEAD-only until the first tagged release. Install with:
-  #   brew install --HEAD callmesukhi/tap/migration-machine
-  # At release time, add a stable block (and drop this comment):
-  #   url "https://github.com/callmesukhi/migration-machine/archive/refs/tags/v0.1.0.tar.gz"
-  #   sha256 "<output of: shasum -a 256 on that tarball>"
+  url "https://github.com/callmesukhi/migration-machine/archive/refs/tags/v0.1.0.tar.gz"
+  sha256 "113e9f2eb0eea5c4cd50e76ff03a4d4ca5fe6c61802837968addc213a3237421"
   head "https://github.com/callmesukhi/migration-machine.git", branch: "main"
 
   depends_on :macos
