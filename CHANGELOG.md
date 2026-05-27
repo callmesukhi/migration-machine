@@ -6,20 +6,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
-### Added
-- `tests/run.sh` engine test harness with fixtures, covering validation
-  skip/confirm, dry-run, `--only`, and optional vs. required failure.
-- GitHub Actions CI: engine tests (gating) and shellcheck (advisory).
-- README "Status & testing" section with a "Tested on" table.
-- Project website under `site/`, deployed to GitHub Pages at
-  migration-machine.callmesukhi.com via the `pages` workflow.
-- `site` workflow and `tests/check-site.sh`: validate that each page parses and
-  that all `href`/`src` links and assets resolve, on PRs touching `site/`.
-- README banner and CI/site/pages status badges.
-
-## [0.1.0] - 2026-05-22
-
-Initial release.
+No version has been tagged yet, so everything below is unreleased. On the first
+release this section becomes `## [0.1.0] - <date>`.
 
 ### Added
 - `migrate` entrypoint with `capture`, `provision`, `restore`, and `bootstrap` commands.
@@ -32,3 +20,17 @@ Initial release.
   encrypted secrets bundle.
 - Tool/data decoupling via `MIGRATION_DATA` (or `--data`).
 - Example manifests for Homebrew and MacPorts machines.
+- `tests/run.sh` engine test harness with fixtures, covering validation
+  skip/confirm, dry-run, `--only`, and optional vs. required failure.
+- GitHub Actions CI: engine tests (gating) and shellcheck (advisory).
+- README "Status & testing" section with a "Tested on" table.
+- Project website under `site/`, deployed to GitHub Pages at
+  migration-machine.callmesukhi.com via the `pages` workflow.
+- `site` workflow and `tests/check-site.sh`: validate that each page parses and
+  that all `href`/`src` links and assets resolve, on PRs touching `site/`.
+- README banner and CI/site/pages status badges.
+- Guided GUI setup: `migrate wizard`, a swiftDialog front-end over the engine
+  that builds a manifest from a few prompts and previews it before applying.
+- One-line installer (`site/install.sh`, served from the site) for a no-git
+  bootstrap that downloads the tool and launches the wizard.
+- Homebrew formula under `packaging/homebrew/` for `brew install` distribution.

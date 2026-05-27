@@ -15,6 +15,26 @@ Move your whole Mac setup to a new machine without Migration Assistant or Time M
 
 It is a small, dependency-light, manifest-driven engine with modular step scripts. You decide what runs by editing JSON, not by hacking the engine.
 
+## Guided setup (fastest)
+
+One command, then a clickable, step-by-step UI. No `git clone`, no flags to learn:
+
+```bash
+curl -fsSL https://migration-machine.callmesukhi.com/install.sh | bash
+```
+
+This downloads migration-machine and launches a guided setup powered by [swiftDialog](https://github.com/swiftDialog/swiftDialog). It walks you through backing up your old Mac or setting up the new one: on the backup path, it confirms and then starts `migrate capture` without a dry-run preview; on the new-Mac setup path, it helps build your manifest and previews each provisioning step as a dry run before anything changes. Already cloned the repo? Just run `./migrate wizard`.
+
+Prefer to read the installer before piping it to a shell (a good habit):
+
+```bash
+curl -fsSL https://migration-machine.callmesukhi.com/install.sh -o install.sh
+less install.sh
+bash install.sh
+```
+
+The hands-on path below is unchanged for anyone who would rather drive it from the command line.
+
 ## Status &amp; testing
 
 Early (`0.1.x`). Use it with eyes open.

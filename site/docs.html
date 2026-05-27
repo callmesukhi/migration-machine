@@ -31,6 +31,7 @@
 
       <div class="doc">
         <aside class="toc">
+          <a href="#wizard">Guided setup</a>
           <a href="#install">Install</a>
           <a href="#data">Tool vs data</a>
           <a href="#commands">Commands</a>
@@ -41,6 +42,15 @@
         </aside>
 
         <div class="prose">
+          <h3 id="wizard">Guided setup</h3>
+          <p>The fastest path: one command, then a clickable setup. No <code>git clone</code>, no flags.</p>
+          <div class="codewrap">
+            <button class="copy">copy</button>
+            <pre class="block"><code>curl -fsSL https://migration-machine.callmesukhi.com/install.sh | bash</code></pre>
+          </div>
+          <p>It downloads migration-machine and launches a guided UI (powered by <a href="https://github.com/swiftDialog/swiftDialog" target="_blank" rel="noopener">swiftDialog</a>) that walks you through capturing the old Mac or setting up the new one, builds a manifest for you, and previews every step before anything runs. Already have the repo? Run <code>./migrate wizard</code>.</p>
+          <div class="callout"><b>Read before you pipe to a shell.</b> Save <code>install.sh</code>, skim it, then run it. Either way, the setup/provisioning path previews everything as a dry run before it changes a thing; the old-Mac backup/capture path runs after you confirm.</div>
+
           <h3 id="install">Install</h3>
           <p>It's plain bash with no runtime to install. Clone it on each machine.</p>
           <div class="codewrap">
