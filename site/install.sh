@@ -29,6 +29,16 @@ TARBALL="https://github.com/$REPO/archive/$REF.tar.gz"
 say() { printf '\033[1m>_\033[0m %s\n' "$*"; }
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 
+# Remove temp/staging on exit. If a swap was interrupted after the old install
+# was moved aside, restore it so the user is never left with nothing.
+cleanup() {
+  set +e
+  if [ -n "${backup:-}" ] && [ -d "${backup:-}" ] && [ ! -e "${DEST:-}" ]; then
+    mv "$backup" "$DEST" 2>/dev/null
+  fi
+  rm -rf "${tmp:-}" "${stage:-}" "${backup:-}" 2>/dev/null
+}
+
 [ "$(uname -s)" = "Darwin" ] || die "migration-machine is for macOS (detected $(uname -s))."
 command -v curl >/dev/null 2>&1 || die "curl is required but not found."
 command -v tar  >/dev/null 2>&1 || die "tar is required but not found."
@@ -37,7 +47,7 @@ say "Downloading migration-machine ($REF) into $DEST"
 # BSD/macOS mktemp needs an explicit template (it is not GNU mktemp), so always
 # pass one. This form works on both macOS and Linux.
 tmp="$(mktemp -d "${TMPDIR:-/tmp}/migration-machine.XXXXXX")" || die "could not create a temporary directory."
-trap 'rm -rf "$tmp"' EXIT
+trap cleanup EXIT
 curl -fsSL "$TARBALL" -o "$tmp/mm.tar.gz" || die "download failed: $TARBALL"
 
 # Refuse dangerous or non-dedicated targets. Canonicalize first so trailing
@@ -52,25 +62,35 @@ DEST="${_parent%/}/$_name"
 _home="$(cd "$HOME" 2>/dev/null && pwd -P || printf '%s' "$HOME")"
 [ "$DEST" = "${_home%/}" ] && die "refusing to install to your home directory. Set MIGRATION_MACHINE_HOME to a dedicated folder."
 
-# Extract into a staging dir, verify it, then atomically replace $DEST so a
-# re-install never leaves stale files from an older version behind.
-stage="$tmp/install"
-mkdir -p "$stage"
+# Stage the new tree NEXT TO $DEST (same filesystem) so the final swap is a
+# rename, and keep the old install as a backup until that swap succeeds, so a
+# failed install never leaves you with nothing.
+mkdir -p "$(dirname "$DEST")" || die "cannot create $(dirname "$DEST")."
+stage="$DEST.new.$$"
+rm -rf "$stage"
+mkdir -p "$stage" || die "cannot write next to $DEST."
 # The archive nests everything under <repo>-<ref>/; strip that one level.
 tar -xzf "$tmp/mm.tar.gz" -C "$stage" --strip-components=1 || die "extract failed."
 [ -f "$stage/migrate" ] || die "install looks incomplete (no migrate in the downloaded archive)."
-# Only replace a directory that clearly matches a prior migration-machine
-# install (its real structure), never one that merely contains a file named
-# "migrate". Anything else is left untouched and the install aborts.
+
+backup=""
 if [ -e "$DEST" ]; then
+  # Only replace a directory that clearly matches a prior migration-machine
+  # install; never one that merely contains a file named "migrate".
   if [ -f "$DEST/migrate" ] && [ -f "$DEST/lib/core.sh" ] && [ -d "$DEST/steps" ] && [ -d "$DEST/manifests" ]; then
-    rm -rf "$DEST"
+    backup="$DEST.old.$$"
+    mv "$DEST" "$backup" || die "could not move the existing install aside."
   else
     die "$DEST already exists and does not look like a migration-machine install. Move it aside, or set MIGRATION_MACHINE_HOME to a dedicated folder."
   fi
 fi
-mkdir -p "$(dirname "$DEST")"
-mv "$stage" "$DEST" || die "could not install to $DEST."
+
+if mv "$stage" "$DEST"; then
+  [ -n "$backup" ] && rm -rf "$backup"
+else
+  [ -n "$backup" ] && mv "$backup" "$DEST"   # restore the previous, working install
+  die "could not install to $DEST (left your previous install in place)."
+fi
 
 say "Installed to $DEST"
 

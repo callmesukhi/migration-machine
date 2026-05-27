@@ -232,13 +232,18 @@ try:
     d = json.load(open(sys.argv[1])) or {}
 except Exception:
     d = {}
-print(d.get(sys.argv[2], ""))' "$DIALOG_OUT" "$key"
+v = d.get(sys.argv[2], "")
+if isinstance(v, dict):          # swiftDialog select fields are objects
+    v = v.get("selectedValue", "")
+print("" if v is None else v)' "$DIALOG_OUT" "$key"
   else
     /usr/bin/osascript -l JavaScript -e '
       function run(a){
         var app = Application.currentApplication(); app.includeStandardAdditions = true;
         var d; try { d = JSON.parse(app.read(Path(a[0]))); } catch(e) { d = {}; }
-        var v = d[a[1]]; return (v == null) ? "" : String(v);
+        var v = d[a[1]];
+        if (v && typeof v === "object") v = v.selectedValue;   // select fields are objects
+        return (v == null) ? "" : String(v);
       }' "$DIALOG_OUT" "$key"
   fi
 }
