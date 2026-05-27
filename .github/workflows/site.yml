@@ -1,6 +1,12 @@
 name: site
 
 on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'site/**'
+      - 'tests/check-site.sh'
+      - '.github/workflows/site.yml'
   pull_request:
     paths:
       - 'site/**'
